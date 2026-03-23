@@ -1,7 +1,6 @@
 body {
   font-family: Arial;
   background: #fef6f0;
-  margin: 0;
 }
 
 header {
@@ -14,24 +13,11 @@ header {
 
 #userBar {
   position: absolute;
-  top: 10px;
   right: 10px;
+  top: 10px;
 }
 
 .hidden { display: none; }
-
-input, textarea {
-  display: block;
-  margin: 10px;
-  padding: 8px;
-  width: 80%;
-}
-
-button {
-  margin: 5px;
-  padding: 8px;
-  cursor: pointer;
-}
 
 .post {
   background: white;
@@ -40,8 +26,7 @@ button {
   border-radius: 10px;
 }
 
-.like-btn {
-  color: red;
-  cursor: pointer;
+img {
+  max-width: 200px;
+  border-radius: 10px;
 }
-
