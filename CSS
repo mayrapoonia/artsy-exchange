@@ -30,6 +30,7 @@ input, textarea {
 button {
   margin: 5px;
   padding: 8px;
+  cursor: pointer;
 }
 
 .post {
@@ -38,3 +39,9 @@ button {
   padding: 10px;
   border-radius: 10px;
 }
+
+.like-btn {
+  color: red;
+  cursor: pointer;
+}
+
