@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Artsy Exchange</title>
+<link rel="stylesheet" href="style.css">
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+</head>
+
+<body>
+
+<header>
+  <h1>🎨 Artsy Exchange</h1>
+  <div id="userBar" class="hidden">
+    <span id="userName"></span>
+    <button onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div id="loginView">
+  <h2>Login / Signup</h2>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="signup()">Sign Up</button>
+  <button onclick="login()">Login</button>
+  <p id="error"></p>
+</div>
+
+<div id="feedView" class="hidden">
+  <h2>Feed</h2>
+  <input id="title" placeholder="Title">
+  <textarea id="content" placeholder="Write something..."></textarea>
+  <button onclick="post()">Post</button>
+  <div id="posts"></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
