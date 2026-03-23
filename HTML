@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <title>Artsy Exchange</title>
 <link rel="stylesheet" href="style.css">
-
-<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 
@@ -19,6 +17,7 @@
   </div>
 </header>
 
+<!-- LOGIN -->
 <div id="loginView">
   <h2>Login / Signup</h2>
   <input id="email" placeholder="Email">
@@ -28,11 +27,21 @@
   <p id="error"></p>
 </div>
 
+<!-- USERNAME SETUP -->
+<div id="usernameView" class="hidden">
+  <h2>Choose Username</h2>
+  <input id="usernameInput" placeholder="Username">
+  <button onclick="saveUsername()">Save</button>
+</div>
+
+<!-- FEED -->
 <div id="feedView" class="hidden">
   <h2>Feed</h2>
+
   <input id="title" placeholder="Title">
   <textarea id="content" placeholder="Write something..."></textarea>
   <button onclick="post()">Post</button>
+
   <div id="posts"></div>
 </div>
 
