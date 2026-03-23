@@ -1,105 +1,126 @@
-// ✅ YOUR SUPABASE DETAILS
 const SUPABASE_URL = "https://jsaqruigjpjyfudeapns.supabase.co";
 const SUPABASE_KEY = "sb_publishable_lbZgUQB14No1kyjdr95Xqw_Qci-cUBp";
 
-// INIT
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ELEMENTS
 const loginView = document.getElementById("loginView");
+const usernameView = document.getElementById("usernameView");
 const feedView = document.getElementById("feedView");
 const userBar = document.getElementById("userBar");
 const userName = document.getElementById("userName");
 const postsDiv = document.getElementById("posts");
-const errorText = document.getElementById("error");
 
-// ---------------- SIGNUP ----------------
+// SIGNUP
 async function signup(){
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+  const email = emailInput.value;
+  const password = passwordInput.value;
 
   const { error } = await supabase.auth.signUp({ email, password });
 
-  if(error){
-    errorText.textContent = error.message;
-  } else {
-    errorText.textContent = "Signup successful! Now login.";
-  }
+  if(error) alert(error.message);
 }
 
-// ---------------- LOGIN ----------------
+// LOGIN
 async function login(){
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+  const { error } = await supabase.auth.signInWithPassword({
+    email: emailInput.value,
+    password: passwordInput.value
+  });
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if(error){
-    errorText.textContent = error.message;
-  }
+  if(error) alert(error.message);
 }
 
-// ---------------- LOGOUT ----------------
+// LOGOUT
 async function logout(){
   await supabase.auth.signOut();
   location.reload();
 }
 
-// ---------------- CHECK USER ----------------
+// CHECK USER
 async function checkUser(){
-  const { data } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if(data.user){
-    loginView.classList.add("hidden");
-    feedView.classList.remove("hidden");
-    userBar.classList.remove("hidden");
+  if(user){
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
 
-    userName.textContent = data.user.email;
-
-    loadPosts();
-  } else {
-    loginView.classList.remove("hidden");
-    feedView.classList.add("hidden");
-    userBar.classList.add("hidden");
+    if(!data){
+      usernameView.classList.remove("hidden");
+    } else {
+      showFeed(data.username);
+    }
   }
 }
 
-// ---------------- CREATE POST ----------------
+// SAVE USERNAME
+async function saveUsername(){
+  const username = document.getElementById("usernameInput").value;
+  const { data: { user } } = await supabase.auth.getUser();
+
+  await supabase.from("profiles").insert([
+    { id: user.id, username }
+  ]);
+
+  showFeed(username);
+}
+
+// SHOW FEED
+function showFeed(name){
+  loginView.classList.add("hidden");
+  usernameView.classList.add("hidden");
+  feedView.classList.remove("hidden");
+  userBar.classList.remove("hidden");
+
+  userName.textContent = name;
+  loadPosts();
+}
+
+// POST
 async function post(){
   const title = document.getElementById("title").value;
   const content = document.getElementById("content").value;
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  if(!title || !content){
-    alert("Fill everything!");
-    return;
-  }
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", user.id)
+    .single();
 
-  const { error } = await supabase.from("posts").insert([
-    { title, content, author: user.email }
+  await supabase.from("posts").insert([
+    { title, content, author: profile.username, likes: 0 }
   ]);
 
-  if(error){
-    alert(error.message);
-  } else {
-    document.getElementById("title").value = "";
-    document.getElementById("content").value = "";
-    loadPosts();
-  }
+  loadPosts();
 }
 
-// ---------------- LOAD POSTS ----------------
+// LIKE
+async function likePost(id, currentLikes){
+  await supabase
+    .from("posts")
+    .update({ likes: currentLikes + 1 })
+    .eq("id", id);
+
+  loadPosts();
+}
+
+// DELETE
+async function deletePost(id){
+  await supabase.from("posts").delete().eq("id", id);
+  loadPosts();
+}
+
+// LOAD POSTS
 async function loadPosts(){
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("posts")
     .select("*")
     .order("id", { ascending: false });
-
-  if(error){
-    console.error(error);
-    return;
-  }
 
   postsDiv.innerHTML = "";
 
@@ -110,12 +131,15 @@ async function loadPosts(){
     div.innerHTML = `
       <h3>${p.title}</h3>
       <p>${p.content}</p>
-      <small>${p.author}</small>
+      <small>${p.author}</small><br>
+      ❤️ ${p.likes || 0}
+      <button onclick="likePost(${p.id}, ${p.likes || 0})">Like</button>
+      <button onclick="deletePost(${p.id})">Delete</button>
     `;
 
     postsDiv.appendChild(div);
   });
 }
 
-// ---------------- AUTO LOGIN CHECK ----------------
+// START
 checkUser();
