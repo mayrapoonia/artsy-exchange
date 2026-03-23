@@ -11,33 +11,27 @@ const userBar = document.getElementById("userBar");
 const userName = document.getElementById("userName");
 const postsDiv = document.getElementById("posts");
 
-// SIGNUP
+// AUTH
 async function signup(){
-  const email = emailInput.value;
-  const password = passwordInput.value;
-
-  const { error } = await supabase.auth.signUp({ email, password });
-
-  if(error) alert(error.message);
-}
-
-// LOGIN
-async function login(){
-  const { error } = await supabase.auth.signInWithPassword({
-    email: emailInput.value,
-    password: passwordInput.value
+  await supabase.auth.signUp({
+    email: email.value,
+    password: password.value
   });
-
-  if(error) alert(error.message);
 }
 
-// LOGOUT
+async function login(){
+  await supabase.auth.signInWithPassword({
+    email: email.value,
+    password: password.value
+  });
+}
+
 async function logout(){
   await supabase.auth.signOut();
   location.reload();
 }
 
-// CHECK USER
+// USER CHECK
 async function checkUser(){
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -51,40 +45,55 @@ async function checkUser(){
     if(!data){
       usernameView.classList.remove("hidden");
     } else {
-      showFeed(data.username);
+      showFeed(data.username, data.is_admin);
     }
   }
 }
 
 // SAVE USERNAME
 async function saveUsername(){
-  const username = document.getElementById("usernameInput").value;
   const { data: { user } } = await supabase.auth.getUser();
 
   await supabase.from("profiles").insert([
-    { id: user.id, username }
+    { id: user.id, username: usernameInput.value, is_admin: false }
   ]);
 
-  showFeed(username);
+  showFeed(usernameInput.value, false);
 }
 
 // SHOW FEED
-function showFeed(name){
+function showFeed(name, isAdmin){
   loginView.classList.add("hidden");
   usernameView.classList.add("hidden");
   feedView.classList.remove("hidden");
   userBar.classList.remove("hidden");
 
-  userName.textContent = name;
+  userName.textContent = name + (isAdmin ? " 👑" : "");
+  window.isAdmin = isAdmin;
+
   loadPosts();
 }
 
-// POST
+// POST WITH IMAGE
 async function post(){
-  const title = document.getElementById("title").value;
-  const content = document.getElementById("content").value;
-
   const { data: { user } } = await supabase.auth.getUser();
+
+  let imageUrl = null;
+  const file = document.getElementById("imageInput").files[0];
+
+  if(file){
+    const filePath = Date.now() + "_" + file.name;
+
+    await supabase.storage
+      .from("images")
+      .upload(filePath, file);
+
+    const { data } = supabase.storage
+      .from("images")
+      .getPublicUrl(filePath);
+
+    imageUrl = data.publicUrl;
+  }
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -93,26 +102,38 @@ async function post(){
     .single();
 
   await supabase.from("posts").insert([
-    { title, content, author: profile.username, likes: 0 }
+    {
+      title: title.value,
+      content: content.value,
+      author: profile.username,
+      user_id: user.id,
+      image_url: imageUrl,
+      likes: 0
+    }
   ]);
 
   loadPosts();
 }
 
 // LIKE
-async function likePost(id, currentLikes){
-  await supabase
-    .from("posts")
-    .update({ likes: currentLikes + 1 })
+async function likePost(id, likes){
+  await supabase.from("posts")
+    .update({ likes: likes + 1 })
     .eq("id", id);
 
   loadPosts();
 }
 
-// DELETE
-async function deletePost(id){
-  await supabase.from("posts").delete().eq("id", id);
-  loadPosts();
+// DELETE (ADMIN OR OWNER)
+async function deletePost(id, ownerId){
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if(user.id === ownerId || window.isAdmin){
+    await supabase.from("posts").delete().eq("id", id);
+    loadPosts();
+  } else {
+    alert("Not allowed");
+  }
 }
 
 // LOAD POSTS
@@ -132,9 +153,10 @@ async function loadPosts(){
       <h3>${p.title}</h3>
       <p>${p.content}</p>
       <small>${p.author}</small><br>
-      ❤️ ${p.likes || 0}
-      <button onclick="likePost(${p.id}, ${p.likes || 0})">Like</button>
-      <button onclick="deletePost(${p.id})">Delete</button>
+      ${p.image_url ? `<img src="${p.image_url}">` : ""}
+      <br>❤️ ${p.likes}
+      <button onclick="likePost(${p.id}, ${p.likes})">Like</button>
+      <button onclick="deletePost(${p.id}, '${p.user_id}')">Delete</button>
     `;
 
     postsDiv.appendChild(div);
