@@ -2,7 +2,11 @@ const SUPABASE_URL = "https://jsaqruigjpjyfudeapns.supabase.co";
 const SUPABASE_KEY = "sb_publishable_lbZgUQB14No1kyjdr95Xqw_Qci-cUBp";
 
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+const email = document.getElementById("email");
+const password = document.getElementById("password");
+const usernameInput = document.getElementById("usernameInput");
+const title = document.getElementById("title");
+const content = document.getElementById("content");
 // ELEMENTS
 const loginView = document.getElementById("loginView");
 const usernameView = document.getElementById("usernameView");
