@@ -1,0 +1,121 @@
+// ✅ YOUR SUPABASE DETAILS
+const SUPABASE_URL = "https://jsaqruigjpjyfudeapns.supabase.co";
+const SUPABASE_KEY = "sb_publishable_lbZgUQB14No1kyjdr95Xqw_Qci-cUBp";
+
+// INIT
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ELEMENTS
+const loginView = document.getElementById("loginView");
+const feedView = document.getElementById("feedView");
+const userBar = document.getElementById("userBar");
+const userName = document.getElementById("userName");
+const postsDiv = document.getElementById("posts");
+const errorText = document.getElementById("error");
+
+// ---------------- SIGNUP ----------------
+async function signup(){
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const { error } = await supabase.auth.signUp({ email, password });
+
+  if(error){
+    errorText.textContent = error.message;
+  } else {
+    errorText.textContent = "Signup successful! Now login.";
+  }
+}
+
+// ---------------- LOGIN ----------------
+async function login(){
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if(error){
+    errorText.textContent = error.message;
+  }
+}
+
+// ---------------- LOGOUT ----------------
+async function logout(){
+  await supabase.auth.signOut();
+  location.reload();
+}
+
+// ---------------- CHECK USER ----------------
+async function checkUser(){
+  const { data } = await supabase.auth.getUser();
+
+  if(data.user){
+    loginView.classList.add("hidden");
+    feedView.classList.remove("hidden");
+    userBar.classList.remove("hidden");
+
+    userName.textContent = data.user.email;
+
+    loadPosts();
+  } else {
+    loginView.classList.remove("hidden");
+    feedView.classList.add("hidden");
+    userBar.classList.add("hidden");
+  }
+}
+
+// ---------------- CREATE POST ----------------
+async function post(){
+  const title = document.getElementById("title").value;
+  const content = document.getElementById("content").value;
+
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if(!title || !content){
+    alert("Fill everything!");
+    return;
+  }
+
+  const { error } = await supabase.from("posts").insert([
+    { title, content, author: user.email }
+  ]);
+
+  if(error){
+    alert(error.message);
+  } else {
+    document.getElementById("title").value = "";
+    document.getElementById("content").value = "";
+    loadPosts();
+  }
+}
+
+// ---------------- LOAD POSTS ----------------
+async function loadPosts(){
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .order("id", { ascending: false });
+
+  if(error){
+    console.error(error);
+    return;
+  }
+
+  postsDiv.innerHTML = "";
+
+  data.forEach(p=>{
+    const div = document.createElement("div");
+    div.className = "post";
+
+    div.innerHTML = `
+      <h3>${p.title}</h3>
+      <p>${p.content}</p>
+      <small>${p.author}</small>
+    `;
+
+    postsDiv.appendChild(div);
+  });
+}
+
+// ---------------- AUTO LOGIN CHECK ----------------
+checkUser();
